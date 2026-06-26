@@ -17,6 +17,8 @@ spec:
           enabled: false # Прометеус у нас теж є
         loki:
           isDefault: false
+        promtail: 
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
