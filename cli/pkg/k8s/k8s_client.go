@@ -8,16 +8,17 @@ import (
 	"strings"
 	"time"
 
+	"os/exec"
+
 	"github.com/pterm/pterm"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"os/exec"
 )
 
 type applicationManifest struct {
-	Kind string `yaml:"kind"`
+	Kind     string `yaml:"kind"`
 	Metadata struct {
 		Name      string `yaml:"name"`
 		Namespace string `yaml:"namespace"`
@@ -93,7 +94,7 @@ func fetchArgoCD(clientset *kubernetes.Clientset) {
 func fetchGrafana(clientset *kubernetes.Clientset) {
 	panel := pterm.DefaultBox.WithTitle("📊 Grafana & Loki").WithTitleTopLeft()
 
-	secretName := "grafana-alloy"
+	secretName := "prometheus-stack-grafana"
 	namespace := "monitoring"
 
 	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
