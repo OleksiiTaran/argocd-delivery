@@ -67,6 +67,7 @@ var upCmd = &cobra.Command{
 		}
 
 		var tgDir string
+		var appOfAppsManifestPath string
 
 		if configChoice == "Default (Pull from OleksiiTaran/argocd-delivery)" {
 
@@ -87,12 +88,22 @@ var upCmd = &cobra.Command{
 			spinner.Success("Repository successfully cloned into temporary directory!")
 
 			tgDir = filepath.Join(tempDir, "terragrunt", "environments", "dev")
+			appOfAppsManifestPath = filepath.Join(tempDir, "argo-apps", "root-app.yaml")
 		} else {
 			pathPrompt := &survey.Input{
 				Message: "Enter the local path to your Terragrunt environment:",
 				Default: "../terragrunt/environments/dev",
 			}
 			if err := survey.AskOne(pathPrompt, &tgDir); err != nil {
+				pterm.Error.Println("Input cancelled.")
+				os.Exit(1)
+			}
+
+			manifestPrompt := &survey.Input{
+				Message: "Enter the local path to your ArgoCD app-of-apps manifest:",
+				Default: filepath.Clean(filepath.Join(tgDir, "..", "..", "..", "argo-apps", "root-app.yaml")),
+			}
+			if err := survey.AskOne(manifestPrompt, &appOfAppsManifestPath); err != nil {
 				pterm.Error.Println("Input cancelled.")
 				os.Exit(1)
 			}
@@ -115,6 +126,13 @@ var upCmd = &cobra.Command{
 		pterm.Info.Printfln("Step 2: Provisioning Cluster and Ingress...")
 		if err := runner.ApplyInfrastructure(tgDir); err != nil {
 			pterm.Error.Printf("\nInfrastructure setup failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		pterm.Println()
+		pterm.Info.Println("Step 3: Bootstrapping ArgoCD App-of-Apps...")
+		if err := k8s.BootstrapArgoCDAppOfApps(appOfAppsManifestPath); err != nil {
+			pterm.Error.Printf("\nArgoCD bootstrap failed: %v\n", err)
 			os.Exit(1)
 		}
 	},

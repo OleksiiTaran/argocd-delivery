@@ -71,10 +71,3 @@ resource "helm_release" "argocd" {
     EOT
   ]
 }
-
-resource "kubernetes_manifest" "root_app" {
-  manifest = yamldecode(file("${path.module}/../../argo-apps/root-app.yaml"))
-  
-  # Це критично: створюємо тільки після того, як ArgoCD встановлений
-  depends_on = [helm_release.argocd] 
-}

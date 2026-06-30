@@ -5,12 +5,24 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/pterm/pterm"
+	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"os/exec"
 )
+
+type applicationManifest struct {
+	Kind string `yaml:"kind"`
+	Metadata struct {
+		Name      string `yaml:"name"`
+		Namespace string `yaml:"namespace"`
+	} `yaml:"metadata"`
+}
 
 func getClient() (*kubernetes.Clientset, error) {
 	homeDir, err := os.UserHomeDir()
@@ -105,4 +117,135 @@ func fetchGrafana(clientset *kubernetes.Clientset) {
 	)
 
 	panel.Println(content)
+}
+
+func BootstrapArgoCDAppOfApps(manifestPath string) error {
+	absManifestPath, err := filepath.Abs(manifestPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve absolute manifest path: %w", err)
+	}
+
+	if _, err := os.Stat(absManifestPath); err != nil {
+		return fmt.Errorf("app-of-apps manifest was not found at %s: %w", absManifestPath, err)
+	}
+
+	appName, appNamespace, err := getManifestApplicationIdentity(absManifestPath)
+	if err != nil {
+		return err
+	}
+
+	if err := waitForResource("namespace", "argocd", "", 2*time.Minute); err != nil {
+		return fmt.Errorf("argocd namespace is not ready: %w", err)
+	}
+
+	if err := waitForResource("crd", "applications.argoproj.io", "", 2*time.Minute); err != nil {
+		return fmt.Errorf("argocd application CRD is not ready: %w", err)
+	}
+
+	if _, err := runKubectl("apply", "-f", absManifestPath); err != nil {
+		return fmt.Errorf("failed to apply app-of-apps manifest: %w", err)
+	}
+
+	if err := waitForApplicationReady(appNamespace, appName, 3*time.Minute); err != nil {
+		return fmt.Errorf("app-of-apps was created but did not become ready: %w", err)
+	}
+
+	pterm.Success.Printf("ArgoCD bootstrap completed: application %s/%s is Synced and Healthy.\n", appNamespace, appName)
+	return nil
+}
+
+func getManifestApplicationIdentity(manifestPath string) (string, string, error) {
+	manifestBytes, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read app-of-apps manifest: %w", err)
+	}
+
+	var manifest applicationManifest
+	if err := yaml.Unmarshal(manifestBytes, &manifest); err != nil {
+		return "", "", fmt.Errorf("failed to parse app-of-apps manifest: %w", err)
+	}
+
+	if manifest.Kind != "Application" {
+		return "", "", fmt.Errorf("manifest kind must be Application, got %q", manifest.Kind)
+	}
+
+	if strings.TrimSpace(manifest.Metadata.Name) == "" {
+		return "", "", fmt.Errorf("manifest metadata.name is required")
+	}
+
+	namespace := strings.TrimSpace(manifest.Metadata.Namespace)
+	if namespace == "" {
+		namespace = "argocd"
+	}
+
+	return strings.TrimSpace(manifest.Metadata.Name), namespace, nil
+}
+
+func waitForResource(kind, name, namespace string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		args := []string{"get", kind, name}
+		if namespace != "" {
+			args = append(args, "-n", namespace)
+		}
+
+		if _, err := runKubectl(args...); err == nil {
+			return nil
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timed out waiting for %s/%s", kind, name)
+}
+
+func waitForApplicationReady(namespace, appName string, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	lastSyncStatus := "<unknown>"
+	lastHealthStatus := "<unknown>"
+
+	for time.Now().Before(deadline) {
+		syncStatus, syncErr := runKubectl(
+			"get", "application", appName,
+			"-n", namespace,
+			"-o", "jsonpath={.status.sync.status}",
+		)
+
+		healthStatus, healthErr := runKubectl(
+			"get", "application", appName,
+			"-n", namespace,
+			"-o", "jsonpath={.status.health.status}",
+		)
+
+		if syncErr == nil {
+			lastSyncStatus = strings.TrimSpace(syncStatus)
+		}
+
+		if healthErr == nil {
+			lastHealthStatus = strings.TrimSpace(healthStatus)
+		}
+
+		if lastSyncStatus == "Synced" && lastHealthStatus == "Healthy" {
+			return nil
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	return fmt.Errorf("timed out waiting for status (sync=%s, health=%s)", lastSyncStatus, lastHealthStatus)
+}
+
+func runKubectl(args ...string) (string, error) {
+	cmd := exec.Command("kubectl", args...)
+	output, err := cmd.CombinedOutput()
+	trimmedOutput := strings.TrimSpace(string(output))
+	if err != nil {
+		if trimmedOutput == "" {
+			return "", fmt.Errorf("kubectl %v failed: %w", args, err)
+		}
+
+		return "", fmt.Errorf("kubectl %v failed: %w: %s", args, err, trimmedOutput)
+	}
+
+	return trimmedOutput, nil
 }
