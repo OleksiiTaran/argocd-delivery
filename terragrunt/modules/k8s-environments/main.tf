@@ -4,23 +4,42 @@ terraform {
             source = "hashicorp/kubernetes"
             version = "~> 2.0"
         }
+        kind = {
+            source = "tehcyx/kind"
+            version = "~> 0.5.0"
+        }
     }
+}
+
+provider kind {}
+
+resource "kind_cluster" "cluster" {
+    name           = "local-sandbox"
+    wait_for_ready = true
+    kind_config = <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 8080
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 8443
+    protocol: TCP
+EOF
 }
 
 provider "kubernetes" {
-    config_path = "~/.kube/config"
-}
-
-resource "kubernetes_cluster" "cluster" {
-    metadata {
-        name = var.cluster_name
-    }
+    config_path    = "~/.kube/config"
 }
 
 resource "kubernetes_namespace" "env" {
     metadata {
         name = var.namespace_name
     }
+    depends_on     = [kind_cluster.cluster]
 }
 
 resource "kubernetes_resource_quota" "env_quota" {
