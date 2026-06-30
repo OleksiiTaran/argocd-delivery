@@ -18,7 +18,7 @@ terraform {
 provider "kind" {}
 
 resource "kind_cluster" "cluster" {
-  name           = "local-prod"
+  name           = "local-sandbox"
   wait_for_ready = true
   
   kind_config {
@@ -32,7 +32,18 @@ resource "kind_cluster" "cluster" {
         protocol       = "TCP"
       }
     }
+    node {
+      role = "worker"
+    }
+    node {
+      role = "worker"
+    }
   }
+}
+
+resource "local_file" "kubeconfig" {
+  content  = kind_cluster.cluster.kubeconfig
+  filename = "${path.module}/kind-config.yaml"
 }
 
 resource "null_resource" "wait_for_cluster" {
@@ -44,17 +55,14 @@ resource "null_resource" "wait_for_cluster" {
 }
 
 provider "kubernetes" {
-  host                   = kind_cluster.cluster.endpoint
-  client_certificate     = kind_cluster.cluster.client_certificate
-  client_key             = kind_cluster.cluster.client_key
-  cluster_ca_certificate = kind_cluster.cluster.cluster_ca_certificate
+  config_path = local_file.kubeconfig.filename
 }
 
 resource "kubernetes_namespace" "env" {
   metadata {
     name = var.namespace_name
   }
-  depends_on = [null_resource.wait_for_cluster]
+  depends_on = [local_file.kubeconfig]
 }
 
 resource "helm_release" "argocd" {
@@ -66,7 +74,7 @@ resource "helm_release" "argocd" {
   version          = "5.51.6"
 
   depends_on = [
-    null_resource.wait_for_cluster,
+    local_file.kubeconfig,
     kubernetes_namespace.env
   ]
 
