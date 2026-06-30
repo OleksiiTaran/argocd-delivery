@@ -44,7 +44,10 @@ resource "null_resource" "wait_for_cluster" {
 }
 
 provider "kubernetes" {
-  config_path = "~/.kube/config"
+  host                   = kind_cluster.cluster.endpoint
+  client_certificate     = kind_cluster.cluster.client_certificate
+  client_key             = kind_cluster.cluster.client_key
+  cluster_ca_certificate = kind_cluster.cluster.cluster_ca_certificate
 }
 
 resource "kubernetes_namespace" "env" {
