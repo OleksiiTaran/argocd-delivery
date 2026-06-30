@@ -1,72 +1,57 @@
 terraform {
-    required_providers {
-        kubernetes = {
-            source = "hashicorp/kubernetes"
-            version = "~> 2.0"
-        }
-        kind = {
-            source = "tehcyx/kind"
-            version = "~> 0.5.0"
-        }
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+
+  required_providers {
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.0"
     }
+    kind = {
+      source  = "tehcyx/kind"
+      version = "~> 0.5.0"
+    }
+  }
 }
 
-provider kind {}
+provider "kind" {}
 
 resource "kind_cluster" "cluster" {
-    name           = "local-sandbox"
-    wait_for_ready = true
-    kind_config {
-        kind        = "Cluster"
-        api_version  = "kind.x-k8s.io/v1alpha4"
-        node {
-            role = "control-plane"
-      
-            extra_port_mappings {
-                container_port = 80
-                host_port      = 8080
-                protocol       = "TCP"
-            }
-            extra_port_mappings {
-                container_port = 443
-                host_port      = 8443
-                protocol       = "TCP"
-            } 
-        }
+  name           = "local-prod"
+  wait_for_ready = true
+  
+  kind_config {
+    kind        = "Cluster"
+    api_version  = "kind.x-k8s.io/v1alpha4"
+    node {
+      role = "control-plane"
+      extra_port_mappings {
+        container_port = 80
+        host_port      = 8080
+        protocol       = "TCP"
+      }
     }
+  }
 }
 
-resource "time_sleep" "wait_for_kind" {
+resource "null_resource" "wait_for_cluster" {
   depends_on = [kind_cluster.cluster]
-  create_duration = "10s"
+  
+  provisioner "local-exec" {
+    command = "until kubectl cluster-info --kubeconfig ~/.kube/config; do echo 'Waiting for K8s API...'; sleep 5; done"
+  }
 }
 
 provider "kubernetes" {
-    config_path    = "~/.kube/config"
-}
-
-data "kubernetes_api_versions" "health_check" {
-  depends_on = [time_sleep.wait_for_kind]
+  config_path = "~/.kube/config"
 }
 
 resource "kubernetes_namespace" "env" {
-    metadata {
-        name = var.namespace_name
-    }
-    depends_on = [time_sleep.wait_for_kind]
-}
-
-resource "kubernetes_resource_quota" "env_quota" {
-    metadata {
-        name      = "${var.namespace_name}-quota"
-        namespace = kubernetes_namespace.env.metadata[0].name
-    }
-    spec {
-        hard = {
-            "limits.cpu"    = var.cpu_limit
-            "limits.memory" = var.memory_limit
-        }
-    }
+  metadata {
+    name = var.namespace_name
+  }
+  depends_on = [null_resource.wait_for_cluster]
 }
 
 resource "helm_release" "argocd" {
@@ -78,7 +63,7 @@ resource "helm_release" "argocd" {
   version          = "5.51.6"
 
   depends_on = [
-    time_sleep.wait_for_kind,
+    null_resource.wait_for_cluster,
     kubernetes_namespace.env
   ]
 
