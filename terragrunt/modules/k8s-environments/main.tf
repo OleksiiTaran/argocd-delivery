@@ -26,6 +26,7 @@ resource "kind_cluster" "cluster" {
     api_version  = "kind.x-k8s.io/v1alpha4"
     node { role = "control-plane" }
     node { role = "worker" }
+    node { role = "worker" }
   }
 }
 
@@ -69,4 +70,11 @@ resource "helm_release" "argocd" {
         - --insecure
     EOT
   ]
+}
+
+resource "kubernetes_manifest" "root_app" {
+  manifest = yamldecode(file("${path.module}/../../argo-apps/root-app.yaml"))
+  
+  # Це критично: створюємо тільки після того, як ArgoCD встановлений
+  depends_on = [helm_release.argocd] 
 }
