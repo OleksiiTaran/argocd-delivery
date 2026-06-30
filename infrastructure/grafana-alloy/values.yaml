@@ -1,4 +1,0 @@
-alloy:
-  configMap:
-    create: false
-    name: custom-alloy-config

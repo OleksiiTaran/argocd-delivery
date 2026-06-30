@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: custom-alloy-config
-data:
-  config.river: |
-{{ .Files.Get "config.river" | indent 4 }}
