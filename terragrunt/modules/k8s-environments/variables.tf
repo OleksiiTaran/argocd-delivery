@@ -3,6 +3,11 @@ variable "namespace_name" {
     type        = string
 }
 
+variable "cluster_name" {
+    description = "Name of the Kubernetes cluster"
+    type        = string
+}
+
 variable "memory_limit" {
     description = "Maximum memory allowed for this namespace"
     type        = string

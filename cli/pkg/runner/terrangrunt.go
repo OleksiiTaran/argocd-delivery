@@ -34,11 +34,9 @@ func ApplyInfrastructure(workingDir string) error {
 func DestroyInfrastructure(workingDir string) error {
 	pterm.Warning.Println("Starting infrastructure teardown via Terragrunt...")
 
-	// Command equivalent to: terragrunt run-all destroy -auto-approve --terragrunt-non-interactive
 	cmd := exec.Command("terragrunt", "destroy", "--non-interactive", "--", "-auto-approve")
 
 	cmd.Dir = workingDir
-
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -46,6 +44,19 @@ func DestroyInfrastructure(workingDir string) error {
 		return fmt.Errorf("infrastructure teardown failed: %w", err)
 	}
 
-	pterm.Success.Println("✅ Infrastructure successfully destroyed!")
+	pterm.Success.Println("Infrastructure successfully destroyed via Terragrunt!")
+
+	clusterName := "local-sandbox"
+
+	spinner, _ := pterm.DefaultSpinner.Start(fmt.Sprintf("Forcefully deleting Kind cluster '%s'...", clusterName))
+
+	kindCmd := exec.Command("kind", "delete", "cluster", "--name", clusterName)
+	if err := kindCmd.Run(); err != nil {
+		// Якщо кластера вже не існує, не падаємо, а просто попереджаємо
+		spinner.Warning(fmt.Sprintf("Could not delete Kind cluster (it might already be destroyed): %v", err))
+	} else {
+		spinner.Success(fmt.Sprintf("Kind cluster '%s' successfully deleted!", clusterName))
+	}
+
 	return nil
 }

@@ -11,6 +11,12 @@ provider "kubernetes" {
     config_path = "~/.kube/config"
 }
 
+resource "kubernetes_cluster" "cluster" {
+    metadata {
+        name = var.cluster_name
+    }
+}
+
 resource "kubernetes_namespace" "env" {
     metadata {
         name = var.namespace_name
