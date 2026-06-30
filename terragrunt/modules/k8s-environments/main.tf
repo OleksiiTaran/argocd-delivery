@@ -36,6 +36,11 @@ resource "kind_cluster" "cluster" {
     }
 }
 
+resource "time_sleep" "wait_for_kind" {
+  depends_on = [kind_cluster.cluster]
+  create_duration = "10s"
+}
+
 provider "kubernetes" {
     config_path    = "~/.kube/config"
 }
@@ -44,7 +49,7 @@ resource "kubernetes_namespace" "env" {
     metadata {
         name = var.namespace_name
     }
-    depends_on     = [kind_cluster.cluster]
+    depends_on = [time_sleep.wait_for_kind]
 }
 
 resource "kubernetes_resource_quota" "env_quota" {
@@ -67,6 +72,11 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   version          = "5.51.6"
+
+  depends_on = [
+    time_sleep.wait_for_kind,
+    kubernetes_namespace.env
+  ]
 
   values = [
     <<-EOT
