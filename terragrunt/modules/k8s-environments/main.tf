@@ -45,6 +45,10 @@ provider "kubernetes" {
     config_path    = "~/.kube/config"
 }
 
+data "kubernetes_api_versions" "health_check" {
+  depends_on = [time_sleep.wait_for_kind]
+}
+
 resource "kubernetes_namespace" "env" {
     metadata {
         name = var.namespace_name
