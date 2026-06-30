@@ -110,7 +110,7 @@ func fetchGrafana(clientset *kubernetes.Clientset) {
 %s admin
 %s %s
 
-%s kubectl port-forward svc/grafana -n monitoring 3000:80`,
+%s kubectl port-forward svc/prometheus-stack-grafana -n monitoring 3000:80`,
 		pterm.FgGreen.Sprint("URL:"),
 		pterm.FgGreen.Sprint("User:"),
 		pterm.FgGreen.Sprint("Pass:"), pterm.FgCyan.Sprint(password),
