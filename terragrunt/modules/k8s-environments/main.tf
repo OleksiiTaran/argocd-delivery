@@ -1,8 +1,4 @@
 terraform {
-  backend "local" {
-    path = "terraform.tfstate"
-  }
-
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -18,7 +14,7 @@ terraform {
 provider "kind" {}
 
 resource "kind_cluster" "cluster" {
-  name           = "local-sandbox"
+  name           = "local-prod"
   wait_for_ready = true
   
   kind_config {
@@ -41,28 +37,18 @@ resource "kind_cluster" "cluster" {
   }
 }
 
-resource "local_file" "kubeconfig" {
-  content  = kind_cluster.cluster.kubeconfig
-  filename = "${path.module}/kind-config.yaml"
-}
-
-resource "null_resource" "wait_for_cluster" {
-  depends_on = [kind_cluster.cluster]
-  
-  provisioner "local-exec" {
-    command = "until kubectl cluster-info --kubeconfig ~/.kube/config; do echo 'Waiting for K8s API...'; sleep 5; done"
-  }
-}
-
+# Провайдер "бере" дані прямо з ресурсу кластера
 provider "kubernetes" {
-  config_path = local_file.kubeconfig.filename
+  host                   = kind_cluster.cluster.endpoint
+  client_certificate     = kind_cluster.cluster.client_certificate
+  client_key             = kind_cluster.cluster.client_key
+  cluster_ca_certificate = kind_cluster.cluster.cluster_ca_certificate
 }
 
 resource "kubernetes_namespace" "env" {
   metadata {
     name = var.namespace_name
   }
-  depends_on = [local_file.kubeconfig]
 }
 
 resource "helm_release" "argocd" {
@@ -72,11 +58,6 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   version          = "5.51.6"
-
-  depends_on = [
-    local_file.kubeconfig,
-    kubernetes_namespace.env
-  ]
 
   values = [
     <<-EOT
