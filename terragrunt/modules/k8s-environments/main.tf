@@ -16,19 +16,24 @@ provider kind {}
 resource "kind_cluster" "cluster" {
     name           = "local-sandbox"
     wait_for_ready = true
-    kind_config = <<EOF
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: 8080
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 8443
-    protocol: TCP
-EOF
+    kind_config {
+        kind        = "Cluster"
+        api_version  = "kind.x-k8s.io/v1alpha4"
+        node {
+            role = "control-plane"
+      
+            extra_port_mappings {
+                container_port = 80
+                host_port      = 8080
+                protocol       = "TCP"
+            }
+            extra_port_mappings {
+                container_port = 443
+                host_port      = 8443
+                protocol       = "TCP"
+            } 
+        }
+    }
 }
 
 provider "kubernetes" {
