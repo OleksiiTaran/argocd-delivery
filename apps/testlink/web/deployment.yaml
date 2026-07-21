@@ -13,18 +13,16 @@ spec:
     spec:
       containers:
         - name: testlink
-          image: fjudith/testlink:latest
+          image: imtnd/testlink:latest
           env:
-            - name: MYSQL_USER
-              value: "testlink_user"
-            - name: MYSQL_PASSWORD
-              value: "testlink_password"
-            - name: MYSQL_DATABASE
-              value: "testlink_db"
-            - name: MYSQL_HOST
+            - name: DB_HOST
               value: "mariadb"
-            - name: MYSQL_PORT
-              value: "3306"
+            - name: DB_USER
+              value: "testlink_user"
+            - name: DB_PASSWORD
+              value: "testlink_password"
+            - name: DB_NAME
+              value: "testlink_db"
           ports:
             - containerPort: 80
           volumeMounts:
