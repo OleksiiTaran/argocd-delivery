@@ -8,3 +8,4 @@ resources:
   - web/deployment.yaml
   - web/pvc.yaml
   - web/service.yaml
+  - ConfigMap.yaml
