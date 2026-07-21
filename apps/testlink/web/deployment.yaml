@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: testlink
-          image: ashel1806/testlink:1.9.20
+          image: fjudith/testlink:latest
           env:
             - name: MYSQL_USER
               value: "testlink_user"
