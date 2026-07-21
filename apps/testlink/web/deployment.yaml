@@ -14,14 +14,16 @@ spec:
       containers:
         - name: testlink
           image: tminai/testlink:latest
+          command: ["/bin/sh", "-c"]
+          args: ["php-fpm && httpd -D FOREGROUND"]
           env:
             - name: DB_HOST
               value: "mariadb"
             - name: DB_USER
-              value: "testlink_user"
+              value: "testlinkuser"
             - name: DB_PASSWORD
               value: "testlink_password"
             - name: DB_NAME
-              value: "testlink_db"
+              value: "testlinkdb"
           ports:
             - containerPort: 80

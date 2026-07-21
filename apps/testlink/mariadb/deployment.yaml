@@ -18,11 +18,11 @@ spec:
             - name: MARIADB_ROOT_PASSWORD
               value: "root_password" # Тільки для локальної розробки!
             - name: MARIADB_USER
-              value: "testlink_user"
+              value: "testlinkuser"
             - name: MARIADB_PASSWORD
               value: "testlink_password"
             - name: MARIADB_DATABASE
-              value: "testlink_db"
+              value: "testlinkdb"
           ports:
             - containerPort: 3306
           volumeMounts:
