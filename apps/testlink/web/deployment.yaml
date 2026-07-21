@@ -25,10 +25,3 @@ spec:
               value: "testlink_db"
           ports:
             - containerPort: 80
-          volumeMounts:
-            - name: testlink-data
-              mountPath: /var/www/html
-      volumes:
-        - name: testlink-data
-          persistentVolumeClaim:
-            claimName: testlink-pvc
