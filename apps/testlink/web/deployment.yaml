@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: testlink
-          image: imtnd/testlink:latest
+          image: tminai/testlink:latest
           env:
             - name: DB_HOST
               value: "mariadb"
