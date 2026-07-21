@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+spec:
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: bitnami/mariadb:11.2
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              value: "root_password" # Тільки для локальної розробки!
+            - name: MARIADB_USER
+              value: "testlink_user"
+            - name: MARIADB_PASSWORD
+              value: "testlink_password"
+            - name: MARIADB_DATABASE
+              value: "testlink_db"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/mariadb
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mariadb-pvc

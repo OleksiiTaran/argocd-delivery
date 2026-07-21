@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: testlink
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/OleksiiTaran/argocd-delivery.git'
+    targetRevision: HEAD
+    path: apps/testlink  # Шлях до твоєї папки з маніфестами
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: testing # Краще виділити окремий неймспейс
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

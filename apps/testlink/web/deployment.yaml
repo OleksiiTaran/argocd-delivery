@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testlink
+spec:
+  selector:
+    matchLabels:
+      app: testlink
+  template:
+    metadata:
+      labels:
+        app: testlink
+    spec:
+      containers:
+        - name: testlink
+          image: bitnami/testlink:1.9.20
+          env:
+            - name: TESTLINK_DATABASE_HOST
+              value: "mariadb" # Вказує на Service бази даних
+            - name: TESTLINK_DATABASE_PORT_NUMBER
+              value: "3306"
+            - name: TESTLINK_DATABASE_USER
+              value: "testlink_user"
+            - name: TESTLINK_DATABASE_PASSWORD
+              value: "testlink_password"
+            - name: TESTLINK_DATABASE_NAME
+              value: "testlink_db"
+            - name: TESTLINK_USERNAME
+              value: "user"
+            - name: TESTLINK_PASSWORD
+              value: "bitnami"
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          volumeMounts:
+            - name: testlink-data
+              mountPath: /bitnami/testlink
+      volumes:
+        - name: testlink-data
+          persistentVolumeClaim:
+            claimName: testlink-pvc
