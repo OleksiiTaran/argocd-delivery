@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: testlink
-          image: bitnami/testlink:1.9.20
+          image: bitnamilegacy/testlink:latest
           env:
             - name: TESTLINK_DATABASE_HOST
               value: "mariadb" # Вказує на Service бази даних
