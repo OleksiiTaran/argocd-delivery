@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: bitnami/mariadb:11.2
+          image: bitnami/mariadb:latest
           env:
             - name: MARIADB_ROOT_PASSWORD
               value: "root_password" # Тільки для локальної розробки!
