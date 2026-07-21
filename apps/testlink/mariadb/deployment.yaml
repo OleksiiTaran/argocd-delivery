@@ -16,6 +16,7 @@ spec:
           image: mariadb:10.6
           env:
             - name: MARIADB_ROOT_PASSWORD
+              value: "root_password"  
           ports:
             - containerPort: 3306
           volumeMounts:
