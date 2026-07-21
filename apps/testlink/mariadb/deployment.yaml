@@ -13,22 +13,21 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: bitnami/mariadb:latest
+          image: mariadb:10.6
           env:
             - name: MARIADB_ROOT_PASSWORD
-              value: "root_password" # Тільки для локальної розробки!
-            - name: MARIADB_USER
-              value: "testlinkuser"
-            - name: MARIADB_PASSWORD
-              value: "testlink_password"
-            - name: MARIADB_DATABASE
-              value: "testlinkdb"
           ports:
             - containerPort: 3306
           volumeMounts:
             - name: data
-              mountPath: /bitnami/mariadb
+              mountPath: /var/lib/mysql
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d/01-init.sql
+              subPath: 01-init.sql
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: mariadb-pvc
+        - name: init-script
+          configMap:
+            name: mariadb-init-script

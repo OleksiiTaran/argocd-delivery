@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-init-script
+  namespace: testing
+data:
+  01-init.sql: |
+    CREATE DATABASE IF NOT EXISTS testlinkdb;
+    CREATE USER IF NOT EXISTS 'testlinkuser'@'%' IDENTIFIED BY 'testlink_password';
+    GRANT ALL PRIVILEGES ON testlinkdb.* TO 'testlinkuser'@'%';
+    FLUSH PRIVILEGES;
