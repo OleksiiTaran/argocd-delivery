@@ -1,34 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mariadb
+  name: kiwi-mariadb
+  namespace: testing
 spec:
   selector:
     matchLabels:
-      app: mariadb
+      app: kiwi-mariadb
   template:
     metadata:
       labels:
-        app: mariadb
+        app: kiwi-mariadb
     spec:
       containers:
         - name: mariadb
           image: mariadb:10.6
           env:
             - name: MARIADB_ROOT_PASSWORD
-              value: "root_password"  
+              value: "root_password"
+            - name: MARIADB_DATABASE
+              value: "kiwidb"
+            - name: MARIADB_USER
+              value: "kiwiuser"
+            - name: MARIADB_PASSWORD
+              value: "kiwipass"
           ports:
             - containerPort: 3306
           volumeMounts:
-            - name: data
+            - name: db-data
               mountPath: /var/lib/mysql
-            - name: init-script
-              mountPath: /docker-entrypoint-initdb.d/01-init.sql
-              subPath: 01-init.sql
       volumes:
-        - name: data
+        - name: db-data
           persistentVolumeClaim:
-            claimName: mariadb-pvc
-        - name: init-script
-          configMap:
-            name: mariadb-init-script
+            claimName: kiwi-db-pvc

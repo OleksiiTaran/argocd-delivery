@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiwi-tcms
+  namespace: testing
+spec:
+  selector:
+    app: kiwi-tcms
+  ports:
+    - port: 8080
+      targetPort: 8080
