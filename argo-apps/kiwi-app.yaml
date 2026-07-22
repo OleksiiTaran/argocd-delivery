@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: testlink
+  name: kiwi-tcms
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: 'https://github.com/OleksiiTaran/argocd-delivery.git'
     targetRevision: HEAD
-    path: apps/testlink  # Шлях до твоєї папки з маніфестами
+    path: apps/kiwi-tcms  # Шлях до твоєї папки з маніфестами
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: testing # Краще виділити окремий неймспейс
