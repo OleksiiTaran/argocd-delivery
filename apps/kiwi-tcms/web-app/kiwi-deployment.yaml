@@ -11,6 +11,8 @@ spec:
     metadata:
       labels:
         app: kiwi-tcms
+      annotations:
+        force-update/timestamp: "2026-07-23"
     spec:
       initContainers:
         - name: wait-for-db
@@ -19,6 +21,7 @@ spec:
       containers:
         - name: kiwi-tcms
           image: kiwitcms/kiwi:latest
+          imagePullPolicy: Always
           env:
             - name: KIWI_DB_HOST
               value: "kiwi-mariadb"
