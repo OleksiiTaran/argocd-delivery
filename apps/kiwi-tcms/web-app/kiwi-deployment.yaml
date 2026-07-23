@@ -18,7 +18,7 @@ spec:
           command: ['sh', '-c', 'until nc -z kiwi-mariadb 3306; do echo "waiting for database..."; sleep 2; done;']
       containers:
         - name: kiwi-tcms
-          image: kiwitcms/kiwi:16.2
+          image: kiwitcms/kiwi:16.1
           env:
             - name: KIWI_DB_HOST
               value: "kiwi-mariadb"
